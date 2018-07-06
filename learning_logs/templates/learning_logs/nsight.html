@@ -1,0 +1,151 @@
+{% extends "learning_logs/base.html" %} {% block header %}
+
+<div class="nav-item dropdown">
+  <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+    <h2>dev-cloudojt001-ncl</h2>
+  </a>
+  <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+    <a class="dropdown-item" href="#" id="1.1.1.1" onclick="graph(id);">CPU 총 사용률</a>
+    <div class="dropdown-divider"></div>
+    <a class="dropdown-item" href="#" id="1.1.1.2" onclick="graph(id);">CPU 가동률</a>
+    <div class="dropdown-divider"></div>
+    <a class="dropdown-item" href="#" id="1.1.3.1" onclick="graph(id);">메모리 총 사용률</a>
+    <div class="dropdown-divider"></div>
+    <a class="dropdown-item" href="#" id="1.1.4.1" onclick="graph(id);">스왑 총 사용률</a>
+    <div class="dropdown-divider"></div>
+    <a class="dropdown-item" href="#" id="1.1.5.1" onclick="graph(id);">디스크 사용률</a>
+    <div class="dropdown-divider"></div>
+    <a class="dropdown-item" id="1.1.1.1" onclick="graph(id);">test</a>
+  </div>
+</div>
+
+<script type="text/javascript" language="JavaScript">
+  function layer_toggle(obj) {
+    if (obj.style.display == 'none') obj.style.display = 'block';
+    else if (obj.style.display == 'block') obj.style.display = 'none';
+  }
+</script>
+
+<script>
+  var graph = function(parm) {
+    var graph_data = [];
+    var title_name, srv_name, api_key;
+
+    if (parm == "1.1.1.1") {
+      title_name = "CPU 총 사용률";
+    } else if (parm == "1.1.1.2") {
+      title_name = "CPU 가동률";
+    } else if (parm == "1.1.3.1") {
+      title_name = "메모리 총 사용률";
+    } else if (parm == "1.1.4.1") {
+      title_name = "스왑 총 사용률";
+    } else if (parm == "1.1.5.1") {
+      title_name = "디스크 사용률";
+    }
+    srv_name = 'dev-cloudojt001-ncl';
+
+    var dt = new Date();
+    var day = dt.getDate();
+    var month = dt.getMonth() + 1;
+    var year = dt.getFullYear();
+    var hour = dt.getHours();
+    var minute = dt.getMinutes();
+    var tdt = year + "" + ("0" + month).slice(-2) + "" + ("0" + day).slice(-2) + "" + ("0" + hour).slice(-2) + "" + ("0" + minute).slice(-2);
+    //("0"+custdate.getDate()).slice(-2)
+    var custdate = new Date(dt);
+    custdate.setHours(custdate.getHours() - 4); // 몇시간 전데이터 받을지?
+    var fdt = custdate.getFullYear() + "" + ("0" + (custdate.getMonth() + 1)).slice(-2) + "" + ("0" + custdate.getDate()).slice(-2) + "" + ("0" + custdate.getHours()).slice(-2) + "" + ("0" + custdate.getMinutes()).slice(-2);
+
+    //console.log("custdate: "+custdate);
+    //console.log("fdt: "+fdt);
+    //console.log("tdt: "+tdt);
+    var api_key = 'R-20150923-001';
+    var url_result = 'http://api.nsight.navercorp.com/monapi/api/request?r=' + api_key + '&k=' + srv_name + '&rt=json&data=' + parm + '&fdt=' + fdt + '&tdt=' + tdt
+    console.log(url_result)
+
+    var graph_data_x = [], graph_data_y = [];
+    $.ajax({
+      url: url_result,
+      type: 'get',
+      dataType: 'json',
+      success: function(data) {
+        var jdata = data['result']['0']['rows'];
+        for (var i = 0; i < jdata.length; i++) {
+          graph_data_x.push(new Date(jdata[i]['time'] * 1000));
+          graph_data_y.push(parseFloat(jdata[i]['value']));
+          //console.log(new Date(jdata[i]['time'] * 1000 - 1000 * 60 * 60)); //한시간후
+        }
+        myChart.update(); // 차트에 데이터 업로드
+      }
+    })
+
+    $("canvas#myChart").remove();
+    $("div#pannel-body").append('<canvas id="myChart"></canvas>');
+
+    var ctx = document.getElementById('myChart').getContext('2d');
+    var myChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: graph_data_x,
+        datasets: [{
+          label: title_name,
+          data: graph_data_y,
+          backgroundColor: "rgba(54, 162, 235, 0.2)"
+        }]
+      },
+      options: {
+        title: {
+          display: true,
+          text: srv_name
+        },
+        scales: {
+          xAxes: [{
+            display: true,
+            type: 'time',
+            format: "HH:mm a",
+
+            position: 'bottom',
+            beginAtZero: true,
+            time: {
+              unit: 'minute',
+              unitStepSize: 30,
+              displayFormats: {
+                'minute': 'h:mm a',
+                'hour': 'h:mm a'
+              }
+            }
+          }],
+          yAxes: [{
+            display: true,
+            ticks: {
+              beginAtZero: true,
+              type: 'linear',
+              position: 'left',
+              stepSize: 20,
+              callback: function(tick) {
+                return tick.toString() + '%';
+              }
+            }
+          }]
+        },
+      }
+    });
+
+  }
+</script>
+
+{% endblock header %} {% block content %}
+<!-- Search Button
+<div style="display:none">
+  <input type="text" id="parm" />
+  <input type="button" value="send" onclick="graph();" />
+</div>
+-->
+<div id="pannel-body" style="height: 370px; width: 100%;">
+  <canvas id="myChart"></canvas>
+</div>
+<script src="http://cdnjs.cloudflare.com/ajax/libs/moment.js/2.13.0/moment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.1.4/Chart.min.js"></script>
+<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.js"></script>
+
+{% endblock content %}
