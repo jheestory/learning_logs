@@ -1,7 +1,7 @@
 # Python
 
-git init
-git add README.md
-git commit -m "first commit"
-git remote add origin https://oss.navercorp.com/dg-kwon/test.git
-git push -u origin master
+git init <br>
+git add README.md <br>
+git commit -m "first commit" <br>
+git remote add origin https://oss.navercorp.com/dg-kwon/test.git <br>
+git push -u origin master <br>
